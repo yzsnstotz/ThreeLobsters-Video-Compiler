@@ -4,6 +4,7 @@
 
 import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
+import { spawn } from 'child_process';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import * as extractor from 'tlvc-extractor';
@@ -15,6 +16,8 @@ import { getProfilesList, readIndex, writeIndex, syncIndex, type ProfileIndexEnt
 import { validateProfileStrict, ensureProfileMeta } from './validateProfile.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+let watcherProcess: ReturnType<typeof spawn> | null = null;
 
 function findRepoRoot(): string {
   let dir = process.cwd();
@@ -456,4 +459,59 @@ apiRouter.get('/episodes/:epId/step2', (req: Request, res: Response) => {
     }
   }
   res.json(out);
+});
+
+// GET /api/watch-step2/status
+apiRouter.get('/watch-step2/status', (_req: Request, res: Response) => {
+  const running = watcherProcess != null && watcherProcess.exitCode === null;
+  const pid = watcherProcess?.pid;
+  res.json({ running: !!running, pid: running ? pid : undefined });
+});
+
+// POST /api/watch-step2/start — body: { inbox?, poll?, k?, tz? }
+apiRouter.post('/watch-step2/start', (req: Request, res: Response) => {
+  if (!requireToken(req, res)) return;
+  if (watcherProcess != null && watcherProcess.exitCode === null) {
+    return res.status(400).json({ error: 'Watcher already running' });
+  }
+  const body = (req.body ?? {}) as { inbox?: string; poll?: number; k?: number; tz?: string };
+  const args = ['watch:step2'];
+  if (body.inbox != null) args.push('--inbox', String(body.inbox));
+  if (body.poll != null) args.push('--poll', String(body.poll));
+  if (body.k != null) args.push('--k', String(body.k));
+  if (body.tz != null) args.push('--tz', String(body.tz));
+  try {
+    const child = spawn('pnpm', args, {
+      cwd: repoRoot,
+      stdio: 'ignore',
+      shell: process.platform === 'win32',
+    });
+    child.on('error', () => {
+      watcherProcess = null;
+    });
+    child.on('close', () => {
+      watcherProcess = null;
+    });
+    watcherProcess = child;
+    res.json({ ok: true, pid: child.pid });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+// POST /api/watch-step2/stop
+apiRouter.post('/watch-step2/stop', (req: Request, res: Response) => {
+  if (!requireToken(req, res)) return;
+  if (watcherProcess == null || watcherProcess.exitCode !== null) {
+    watcherProcess = null;
+    return res.json({ ok: true, wasRunning: false });
+  }
+  try {
+    watcherProcess.kill('SIGTERM');
+    watcherProcess = null;
+    res.json({ ok: true, wasRunning: true });
+  } catch (e) {
+    watcherProcess = null;
+    res.status(500).json({ error: String(e) });
+  }
 });

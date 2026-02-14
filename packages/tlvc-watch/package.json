@@ -1,0 +1,8 @@
+{
+  "name": "tlvc-watch",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/watch_step2.ts",
+  "types": "src/watch_step2.ts",
+  "scripts": {}
+}

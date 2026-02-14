@@ -172,3 +172,35 @@ export async function getStep2Output(epId: string): Promise<Record<string, unkno
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
+
+export interface WatchStep2Status {
+  running: boolean;
+  pid?: number;
+}
+
+export async function getWatchStep2Status(): Promise<WatchStep2Status> {
+  const r = await request('/api/watch-step2/status');
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function startWatchStep2(params?: {
+  inbox?: string;
+  poll?: number;
+  k?: number;
+  tz?: string;
+}): Promise<{ ok: boolean; pid?: number }> {
+  const r = await request('/api/watch-step2/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params ?? {}),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function stopWatchStep2(): Promise<{ ok: boolean; wasRunning: boolean }> {
+  const r = await request('/api/watch-step2/stop', { method: 'POST' });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}

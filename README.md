@@ -61,3 +61,40 @@ pnpm tlvc preprocess ./telegram.html --ep ep_0007 --out build/episodes/ep_0007 -
 ```
 
 Step2 output is written to `<out_dir>/step2_preprocess/`.
+
+## Step2 Watch (inbox daemon)
+
+A watch process monitors `inbox/` for new episode folders (`ep_####`). When it finds one that is fully delivered and stable, it runs Step2 CLI once and writes marker files under `build/episodes/<ep>/`. No LLM, no network, Node + fs only.
+
+### How to deliver an episode
+
+1. Create a staging folder (watcher ignores it): `inbox/ep_9999.__staging__`
+2. Copy your Telegram export or messages.html into it.
+3. Rename when ready: `mv inbox/ep_9999.__staging__ inbox/ep_9999`
+
+Only directories named exactly `ep_####` are processed; names ending with `.__staging__` are ignored.
+
+### How to start the watcher
+
+From repo root:
+
+```bash
+cd /Users/yzliu/work/tlvc
+pnpm watch:step2
+```
+
+Optional: `--inbox inbox` `--poll 5000` `--k 3` `--tz Asia/Tokyo`
+
+### Marker files (under build/episodes/&lt;ep&gt;/)
+
+- **step2.running** — Step2 is running (start_ts, pid).
+- **step2.done** — Step2 finished with exit 0 (end_ts, exit_code, output_dir).
+- **step2.fail** — Step2 failed or timed out (end_ts, exit_code, reason, optional lint_summary_path).
+
+Idempotent: existing `step2.done` skips reprocessing. Stale `step2.running` (e.g. &gt;10 min) is marked fail and removed.
+
+### Logs and troubleshooting
+
+- Per-episode log: `build/episodes/<ep>/logs/step2_watch.log`. Console shows short status.
+- On failure check `step2.fail` and, if present, `lint_report.step2.json` at the path in `lint_summary_path`.
+- Episode folder must contain at least one HTML (e.g. messages.html). Watcher waits for directory stability (2s) before starting Step2.
