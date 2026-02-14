@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tlvc.api</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/yzliu/work/tlvc/apps/tlvc-api/deploy/run-tlvc-api.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/yzliu/work/tlvc</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>TLVC_ROOT</key>
+        <string>/Users/yzliu/work/tlvc</string>
+        <key>TLVC_TOKEN_FILE</key>
+        <string>/Users/yzliu/work/tlvc/.secrets/tlvc.token</string>
+        <key>TLVC_PORT</key>
+        <string>8789</string>
+        <key>TLVC_BIND</key>
+        <string>0.0.0.0</string>
+        <key>TLVC_MAX_UPLOAD_MB</key>
+        <string>200</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/yzliu/Library/Logs/tlvc-api.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/yzliu/Library/Logs/tlvc-api.log</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>

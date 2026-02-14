@@ -4,6 +4,7 @@
   "scripts": {
     "tlvc": "tsx apps/tlvc-cli/src/main.ts",
     "watch:step2": "tsx packages/tlvc-watch/src/watch_step2.ts",
+    "tlvc-api": "pnpm --filter tlvc-api start",
     "studio": "pnpm --filter tlvc-studio dev",
     "studio:prod": "pnpm --filter tlvc-studio build && pnpm --filter tlvc-studio start",
     "test:e2e-step2": "node tests/e2e-step2-input.test.mjs"
