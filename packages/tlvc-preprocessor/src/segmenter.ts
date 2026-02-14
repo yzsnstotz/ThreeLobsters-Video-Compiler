@@ -52,18 +52,34 @@ function mergeRanges(ranges: { start: number; end: number }[]): { start: number;
   return merged;
 }
 
+function countDistinctSenders(messages: TranscriptMessage[], start: number, end: number): number {
+  const set = new Set<string>();
+  for (let i = start; i <= end; i++) {
+    const m = messages[i];
+    if (m?.sender) set.add(m.sender);
+  }
+  return set.size;
+}
+
 function expandToMin(
   start: number,
   end: number,
   minLen: number,
-  total: number
+  total: number,
+  messages: TranscriptMessage[]
 ): { start: number; end: number } {
   let s = start;
   let e = end;
   while (e - s + 1 < minLen && (s > 0 || e < total - 1)) {
-    if (s > 0) s--;
+    const tryExtendBack = s > 0 ? countDistinctSenders(messages, s - 1, e) : 0;
+    const tryExtendFwd = e < total - 1 ? countDistinctSenders(messages, s, e + 1) : 0;
+    const currentRoles = countDistinctSenders(messages, s, e);
+    if (s > 0 && (e >= total - 1 || tryExtendBack >= tryExtendFwd)) {
+      s--;
+    } else if (e < total - 1) {
+      e++;
+    }
     if (e - s + 1 >= minLen) break;
-    if (e < total - 1) e++;
   }
   return { start: s, end: Math.min(e, total - 1) };
 }
@@ -112,7 +128,7 @@ export function segment(messages: TranscriptMessage[]): RawSegment[] {
   for (let i = 0; i < merged.length; i++) {
     let start = merged[i].start;
     let end = merged[i].end;
-    const expanded = expandToMin(start, end, MIN_LEN, total);
+    const expanded = expandToMin(start, end, MIN_LEN, total, messages);
     start = expanded.start;
     end = expanded.end;
     const errorIndicesInRange = new Set<number>();

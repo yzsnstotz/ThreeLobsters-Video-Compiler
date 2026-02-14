@@ -99,14 +99,14 @@ export function RunStep2() {
     <div>
       <div className="card">
         <h1 style={{ marginTop: 0 }}>Run Step2</h1>
-        <p>Pick <strong>messages.html</strong> or enter a <strong>server path</strong> to an export folder. Output is written to <code>build/episodes/&lt;epId&gt;/step2_preprocess/</code>.</p>
+        <p>Upload <strong>Export (html/zip)</strong> or enter a <strong>server path</strong> to an export file or folder. Output is written to <code>build/episodes/&lt;epId&gt;/step2_preprocess/</code>.</p>
         {err && <p className="errors">{err}</p>}
         <div style={{ display: 'grid', gap: '1rem', maxWidth: 520 }}>
           <label>
-            <span style={{ display: 'block', marginBottom: 0.25 }}>Pick messages.html</span>
+            <span style={{ display: 'block', marginBottom: 0.25 }}>Upload Export (html/zip)</span>
             <input
               type="file"
-              accept=".html,text/html"
+              accept=".html,.zip,text/html,application/zip"
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 setHtmlFile(f ?? null);
@@ -130,7 +130,7 @@ export function RunStep2() {
             </button>
             {(resolved || result?.resolved) && (
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                messages.html resolved
+                Main HTML resolved
               </span>
             )}
           </div>

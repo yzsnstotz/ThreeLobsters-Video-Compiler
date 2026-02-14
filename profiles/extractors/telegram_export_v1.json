@@ -1,5 +1,8 @@
 {
-  "message": { "containerSelector": "div.message" },
+  "message": {
+    "containerSelector": "div.message.default",
+    "ignoreSelectors": ["div.message.service", "div.message_date", "div.message.joined"]
+  },
   "sender": {
     "rules": [
       {
@@ -12,7 +15,7 @@
   "ts": {
     "rules": [
       {
-        "selector": "div.pull_right.date.details",
+        "selector": "div.pull_right.date.details[title]",
         "value": { "type": "attr", "name": "title" },
         "normalize": { "trim": true }
       },

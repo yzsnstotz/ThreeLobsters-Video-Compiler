@@ -36,9 +36,11 @@ export interface ExtractorFieldConfig {
 
 export interface ExtractorProfile {
   meta?: ExtractorProfileMeta;
-  /** CSS selector for each message block (e.g. "div.message"). */
+  /** CSS selector for each message block (e.g. "div.message.default"). */
   message: {
     containerSelector: string;
+    /** Containers matching any of these selectors are skipped (not emitted as messages). */
+    ignoreSelectors?: string[];
   };
   sender: ExtractorFieldConfig;
   ts: ExtractorFieldConfig;
@@ -47,11 +49,19 @@ export interface ExtractorProfile {
   reply_to?: ExtractorFieldConfig;
 }
 
+export type AttachmentKind = 'photo' | 'video' | 'file' | 'sticker' | 'voice' | 'unknown';
+
+export interface ParsedAttachment {
+  kind: AttachmentKind;
+  path: string;
+}
+
 export interface ParsedMessage {
   ts: string;
   sender: Sender;
   text: string;
   reply_to: string | null;
+  attachments?: ParsedAttachment[];
 }
 
 export interface ParseStats {

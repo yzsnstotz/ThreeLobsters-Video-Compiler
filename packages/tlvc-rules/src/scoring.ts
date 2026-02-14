@@ -29,8 +29,22 @@ export const SCORING_RULES: ScoringRule[] = [
         const m = msgMap.get(id);
         if (m && ['ao000', 'ao001', 'ao002'].includes(m.sender)) senders.add(m.sender);
       }
-      const points = senders.size * 10;
-      return { points, detail: `Tri-roles: ${senders.size}` };
+      const n = senders.size;
+      const points = n >= 3 ? 35 : n >= 2 ? 20 : n * 10;
+      return { points, detail: `Tri-roles: ${n}` };
+    },
+  },
+  {
+    rule_id: 'roles.diversity.min2',
+    compute: (seg, transcript) => {
+      const senders = new Set<string>();
+      const msgMap = new Map(transcript.messages.map((m) => [m.id, m]));
+      for (const id of seg.message_ids) {
+        const m = msgMap.get(id);
+        if (m) senders.add(m.sender);
+      }
+      const points = senders.size >= 2 ? 15 : 0;
+      return { points, detail: `Distinct roles: ${senders.size}` };
     },
   },
   {

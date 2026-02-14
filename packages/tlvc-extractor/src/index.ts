@@ -6,6 +6,8 @@ export type {
   ExtractorNormalize,
   ExtractorFieldConfig,
   ParsedMessage,
+  ParsedAttachment,
+  AttachmentKind,
   ParseStats,
   SampleExtraction,
   ExtractionDebug,

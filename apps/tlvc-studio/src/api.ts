@@ -96,7 +96,13 @@ export async function setDefaultProfile(name: string): Promise<void> {
 }
 
 export interface PreviewResult {
-  messagesPreview: Array<{ ts: string; sender: string; text: string; reply_to: string | null }>;
+  messagesPreview: Array<{
+    ts: string;
+    sender: string;
+    text: string;
+    reply_to: string | null;
+    attachments?: Array<{ kind: string; path: string }>;
+  }>;
   stats: { totalMessages: number; senderCounts: Record<string, number>; tsMissingCount: number };
   extractionDebug?: {
     containerMatches: number;

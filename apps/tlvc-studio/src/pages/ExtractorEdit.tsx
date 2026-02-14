@@ -207,7 +207,7 @@ export function ExtractorEdit() {
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr><th>#</th><th>ts</th><th>sender</th><th>text</th></tr>
+                  <tr><th>#</th><th>ts</th><th>sender</th><th>text</th><th>att</th></tr>
                 </thead>
                 <tbody>
                   {previewResult.messagesPreview.slice(0, 100).map((m, i) => (
@@ -218,6 +218,7 @@ export function ExtractorEdit() {
                       <td style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {m.text.slice(0, 100)}{m.text.length > 100 ? '…' : ''}
                       </td>
+                      <td>{Array.isArray(m.attachments) ? m.attachments.length : 0}</td>
                     </tr>
                   ))}
                 </tbody>

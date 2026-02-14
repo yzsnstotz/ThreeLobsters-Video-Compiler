@@ -42,3 +42,52 @@ export function parseTelegramTitleTs(tsStr: string, tz?: string): string | null 
   const d = new Date(utcMs);
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
+
+const MONTH_NAMES: Record<string, string> = {
+  january: '01', february: '02', march: '03', april: '04', may: '05', june: '06',
+  july: '07', august: '08', september: '09', october: '10', november: '11', december: '12',
+};
+
+/**
+ * Parse date-separator text (e.g. "12 February 2026" or "12.02.2026") to DD.MM.YYYY.
+ * Returns null if unparseable.
+ */
+export function parseDateSeparatorToDDMMYYYY(text: string): string | null {
+  const s = (text ?? '').trim();
+  if (!s) return null;
+  const ddmmyyyy = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
+  if (ddmmyyyy) {
+    const [, d, m, y] = ddmmyyyy;
+    return `${d!.padStart(2, '0')}.${m!.padStart(2, '0')}.${y}`;
+  }
+  const parts = s.split(/\s+/);
+  if (parts.length >= 3) {
+    const day = parts[0].replace(/\D/g, '');
+    const monthStr = parts[1].toLowerCase();
+    const year = parts[2].replace(/\D/g, '');
+    const month = MONTH_NAMES[monthStr] ?? (monthStr.length <= 2 ? monthStr.padStart(2, '0') : null);
+    if (day && month && year && year.length === 4) {
+      return `${day.padStart(2, '0')}.${month}.${year}`;
+    }
+  }
+  return null;
+}
+
+/** Time-only pattern (HH:mm or HH:mm:ss). */
+const TIME_ONLY_REGEX = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/;
+
+/**
+ * Build full Telegram-style ts string from date (DD.MM.YYYY) + time-only (e.g. 13:24) + offset (e.g. UTC+09:00).
+ * Seconds default to :00 if missing. Returns string suitable for parseTelegramTitleTs.
+ */
+export function buildFullTsFromDateAndTime(
+  dateDDMMYYYY: string,
+  timeOnly: string,
+  utcOffsetStr: string
+): string {
+  const timeMatch = (timeOnly ?? '').trim().match(TIME_ONLY_REGEX);
+  const hour = timeMatch?.[1]?.padStart(2, '0') ?? '00';
+  const min = timeMatch?.[2]?.padStart(2, '0') ?? '00';
+  const sec = (timeMatch?.[3] ?? '0').padStart(2, '0');
+  return `${dateDDMMYYYY} ${hour}:${min}:${sec} ${utcOffsetStr}`;
+}

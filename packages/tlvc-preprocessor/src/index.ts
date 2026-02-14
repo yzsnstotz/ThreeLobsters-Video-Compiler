@@ -27,6 +27,7 @@ const FILES = {
   transcript: 'sanitized.transcript.json',
   segments: 'segments.topk.json',
   lint: 'lint_report.step2.json',
+  preview: 'preview.tsv',
 } as const;
 
 export interface PreprocessOptions {
@@ -56,13 +57,18 @@ export async function preprocessEpisode(options: PreprocessOptions): Promise<Pre
   const resolved = await resolveTelegramExportInput(input);
   const baseDir = join(normalizeOutDir(outDir), STEP2_DIR);
 
-  const messages = parseAndAssignIds(resolved.messagesHtmlPath, options.profilePath, tz);
+  const messages = parseAndAssignIds(resolved.messagesHtmlPath, options.profilePath, tz, resolved.exportRootDir);
   const { transcript, residualExamples } = redactMessages(messages, {
     ep: epId,
     tz,
     input_kind: resolved.kind,
     export_root: resolved.exportRootDir,
     messages_html: resolved.messagesHtmlPath,
+    source: {
+      input_path: resolved.input_path,
+      html_file: resolved.messagesHtmlPath,
+      assets_dir: resolved.exportRootDir,
+    },
   });
   const rawSegments = segment(transcript.messages);
   const topk = scoreSegments(rawSegments, transcript, k);
@@ -86,6 +92,17 @@ export async function preprocessEpisode(options: PreprocessOptions): Promise<Pre
     stableStringify(lintReport, KEY_ORDER_LINT),
     'utf-8'
   );
+
+  const previewLines = [
+    'idx\tts\tsender\ttext(truncate80)\tatt_count',
+    ...transcript.messages.map((m, i) => {
+      let text80 = (m.text ?? '').length > 80 ? (m.text ?? '').slice(0, 80) + '…' : (m.text ?? '');
+      text80 = text80.replace(/\t/g, ' ').replace(/\n/g, ' ');
+      const attCount = Array.isArray(m.attachments) ? m.attachments.length : 0;
+      return `${i + 1}\t${m.ts}\t${m.sender}\t${text80}\t${attCount}`;
+    }),
+  ];
+  writeFileSync(join(baseDir, FILES.preview), previewLines.join('\n'), 'utf-8');
 
   return { transcript, topk, lintReport, exitCode };
 }

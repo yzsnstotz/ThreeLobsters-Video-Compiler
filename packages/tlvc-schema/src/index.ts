@@ -5,6 +5,16 @@
 
 export type Sender = 'ao000' | 'ao001' | 'ao002' | 'leo' | 'system' | 'unknown';
 
+export type AttachmentKind = 'photo' | 'video' | 'file' | 'sticker' | 'voice' | 'unknown';
+
+export interface TranscriptAttachment {
+  kind: AttachmentKind;
+  /** Path relative to export/assets root. */
+  path: string;
+  mime?: string;
+  label?: string;
+}
+
 export interface TranscriptMessage {
   id: string;
   ts: string;
@@ -13,7 +23,13 @@ export interface TranscriptMessage {
   sender: Sender;
   text: string;
   reply_to: string | null;
-  attachments: unknown[];
+  attachments: TranscriptAttachment[];
+}
+
+export interface SanitizedTranscriptSource {
+  input_path: string;
+  html_file: string;
+  assets_dir: string;
 }
 
 export interface SanitizedTranscriptMeta {
@@ -23,6 +39,8 @@ export interface SanitizedTranscriptMeta {
   input_kind: 'file' | 'dir';
   export_root: string;
   messages_html: string;
+  /** Appended at end; does not break existing field order. */
+  source?: SanitizedTranscriptSource;
 }
 
 export interface SanitizedTranscript {
@@ -95,7 +113,7 @@ export interface LintReportStep2 {
 export type KeyOrderMap = Record<string, string[]>;
 
 const TRANSCRIPT_ROOT_KEYS = ['meta', 'redaction', 'messages'] as const;
-const TRANSCRIPT_META_KEYS = ['ep', 'tz', 'version', 'input_kind', 'export_root', 'messages_html'] as const;
+const TRANSCRIPT_META_KEYS = ['ep', 'tz', 'version', 'input_kind', 'export_root', 'messages_html', 'source'] as const;
 const REDACTION_KEYS = ['total_hits', 'by_rule'] as const;
 const MESSAGE_KEYS = ['id', 'ts', 'ts_raw', 'sender', 'text', 'reply_to', 'attachments'] as const;
 
@@ -110,9 +128,12 @@ const LINT_SUMMARY_KEYS = ['errors', 'warnings', 'infos'] as const;
 const LINT_ENTRY_KEYS = ['code', 'message', 'examples'] as const;
 
 /** Predefined key orders for the three output roots (for stableStringify). */
+const SOURCE_KEYS = ['input_path', 'html_file', 'assets_dir'] as const;
+
 export const KEY_ORDER_TRANSCRIPT: KeyOrderMap = {
   '': [...TRANSCRIPT_ROOT_KEYS],
   meta: [...TRANSCRIPT_META_KEYS],
+  source: [...SOURCE_KEYS],
   redaction: [...REDACTION_KEYS],
   message: [...MESSAGE_KEYS],
 };

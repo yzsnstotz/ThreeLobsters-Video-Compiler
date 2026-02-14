@@ -351,6 +351,7 @@ apiRouter.post('/resolve-input', upload.single('html'), async (req: Request, res
     const resolved = await resolveInput(inputPath);
     res.json({
       kind: resolved.kind,
+      input_path: resolved.input_path,
       exportRootDir: resolved.exportRootDir,
       messagesHtmlPath: resolved.messagesHtmlPath,
       assets: resolved.assets,

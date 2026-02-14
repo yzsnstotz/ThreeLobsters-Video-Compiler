@@ -214,7 +214,7 @@ export function ExtractorsList() {
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr><th>#</th><th>ts</th><th>sender</th><th>text</th></tr>
+                  <tr><th>#</th><th>ts</th><th>sender</th><th>text</th><th>att</th></tr>
                 </thead>
                 <tbody>
                   {previewResult.messagesPreview.slice(0, 30).map((m, i) => (
@@ -223,6 +223,7 @@ export function ExtractorsList() {
                       <td>{m.ts || '—'}</td>
                       <td>{m.sender}</td>
                       <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.text.slice(0, 80)}{m.text.length > 80 ? '…' : ''}</td>
+                      <td>{Array.isArray(m.attachments) ? m.attachments.length : 0}</td>
                     </tr>
                   ))}
                 </tbody>

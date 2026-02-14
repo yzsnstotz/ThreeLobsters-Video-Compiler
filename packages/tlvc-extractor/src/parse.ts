@@ -3,11 +3,13 @@
  */
 
 import * as cheerio from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 import type { Sender } from 'tlvc-schema';
 import type {
   ExtractorProfile,
   ExtractorRule,
   ParsedMessage,
+  ParsedAttachment,
   ParseStats,
   ExtractionDebug,
   FieldExtractionDebug,
@@ -62,6 +64,40 @@ function extractField(
 const SAMPLE_TRUNCATE = 80;
 const MAX_EXAMPLE_SAMPLES = 3;
 
+const ATTACHMENT_PATH_PATTERNS: Array<{ pattern: RegExp; kind: ParsedAttachment['kind'] }> = [
+  { pattern: /^(?:\.\/)?photos\//i, kind: 'photo' },
+  { pattern: /^(?:\.\/)?(?:video_files|videos?)\//i, kind: 'video' },
+  { pattern: /^(?:\.\/)?files\//i, kind: 'file' },
+  { pattern: /^(?:\.\/)?stickers\//i, kind: 'sticker' },
+  { pattern: /^(?:\.\/)?voice_messages\//i, kind: 'voice' },
+];
+
+function kindFromPath(pathRaw: string): ParsedAttachment['kind'] {
+  const normalized = pathRaw.replace(/\\/g, '/');
+  for (const { pattern, kind } of ATTACHMENT_PATH_PATTERNS) {
+    if (pattern.test(normalized)) return kind;
+  }
+  return 'unknown';
+}
+
+function parseAttachmentsInContainer(
+  $: CheerioAPI,
+  $container: cheerio.Cheerio<cheerio.Element>
+): ParsedAttachment[] {
+  const out: ParsedAttachment[] = [];
+  const seen = new Set<string>();
+  $container.find('a[href], img[src]').each((_, el) => {
+    const $el = $(el);
+    const href = $el.attr('href') ?? $el.attr('src') ?? '';
+    const pathNorm = href.replace(/\\/g, '/').replace(/^\.\//, '');
+    if (!pathNorm || pathNorm.startsWith('http') || pathNorm.startsWith('#')) return;
+    if (seen.has(pathNorm)) return;
+    seen.add(pathNorm);
+    out.push({ kind: kindFromPath(pathNorm), path: pathNorm });
+  });
+  return out;
+}
+
 export interface ParseWithProfileResult {
   messages: ParsedMessage[];
   stats: ParseStats;
@@ -79,7 +115,14 @@ export function parseMessagesFromHtml(
   options?: { maxPreviewMessages?: number; includeSampleExtractions?: boolean; includeExtractionDebug?: boolean }
 ): ParseWithProfileResult {
   const $ = cheerio.load(html);
-  const containers = $(profile.message.containerSelector).toArray();
+  let containers = $(profile.message.containerSelector).toArray();
+  const ignoreSelectors = profile.message.ignoreSelectors ?? [];
+  if (ignoreSelectors.length > 0) {
+    containers = containers.filter((el) => {
+      const $el = $(el);
+      return !ignoreSelectors.some((sel) => $el.is(sel));
+    });
+  }
   const maxPreview = options?.maxPreviewMessages ?? 0;
   const includeSamples = options?.includeSampleExtractions ?? false;
   const includeExtractionDebug = options?.includeExtractionDebug ?? false;
@@ -140,11 +183,13 @@ export function parseMessagesFromHtml(
       ? extractField($container, profile.reply_to.rules)?.value ?? null
       : null;
 
+    const attachments = parseAttachmentsInContainer($, $container);
     const msg: ParsedMessage = {
       ts,
       sender,
       text,
       reply_to: reply_to as string | null,
+      attachments,
     };
 
     if (i < limit) messages.push(msg);
