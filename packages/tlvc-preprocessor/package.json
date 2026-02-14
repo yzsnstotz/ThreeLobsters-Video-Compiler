@@ -1,0 +1,12 @@
+{
+  "name": "tlvc-preprocessor",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {},
+  "dependencies": {
+    "tlvc-extractor": "workspace:*",
+    "tlvc-rules": "workspace:*",
+    "tlvc-schema": "workspace:*"
+  }
+}

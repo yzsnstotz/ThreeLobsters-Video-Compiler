@@ -1,0 +1,17 @@
+{
+  "name": "tlvc",
+  "private": true,
+  "scripts": {
+    "tlvc": "tsx apps/tlvc-cli/src/main.ts",
+    "studio": "pnpm --filter tlvc-studio dev",
+    "studio:prod": "pnpm --filter tlvc-studio build && pnpm --filter tlvc-studio start",
+    "test:e2e-step2": "node tests/e2e-step2-input.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.0"
+  }
+}

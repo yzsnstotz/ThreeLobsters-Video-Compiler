@@ -1,0 +1,10 @@
+{
+  "defaultProfile": "telegram_export_v1.json",
+  "profiles": [
+    {
+      "filename": "telegram_export_v1.json",
+      "name": "Telegram Desktop Export (default)",
+      "updatedAt": "2026-02-14T07:33:03.121Z"
+    }
+  ]
+}

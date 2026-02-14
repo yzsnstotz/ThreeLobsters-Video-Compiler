@@ -1,0 +1,168 @@
+:root {
+  --bg: #0f0f12;
+  --surface: #1a1a1f;
+  --border: #2a2a32;
+  --text: #e8e8ed;
+  --text-muted: #888;
+  --accent: #5c7cfa;
+  --accent-hover: #6b8aff;
+  --danger: #e74c3c;
+  --success: #2ecc71;
+  --touch-min: 44px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button, .btn {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: 0 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+button:hover, .btn:hover {
+  background: var(--border);
+}
+button.primary, .btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+button.primary:hover, .btn.primary:hover {
+  background: var(--accent-hover);
+}
+
+input, select, textarea {
+  min-height: var(--touch-min);
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.sidebar {
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1rem 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar nav a {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  min-height: var(--touch-min);
+  color: var(--text);
+  border-left: 3px solid transparent;
+}
+.sidebar nav a:hover, .sidebar nav a.active {
+  background: rgba(255,255,255,0.05);
+  border-left-color: var(--accent);
+}
+.main {
+  flex: 1;
+  padding: 1rem;
+  overflow: auto;
+  background: var(--bg);
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem;
+  }
+  .sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .sidebar nav a {
+    padding: 0.5rem 1rem;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th, td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.text-muted { color: var(--text-muted); }
+.errors { color: var(--danger); }
+.warnings { color: #f39c12; }
+
+.profile-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.profile-card .profile-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; }
+.badge.default { background: var(--accent); color: #fff; }
+.touch-target { min-height: var(--touch-min); min-width: var(--touch-min); display: inline-flex; align-items: center; justify-content: center; }
+.rule-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; }
+.rule-card .rule-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.rule-card .rule-row:last-child { margin-bottom: 0; }
+.rule-card input, .rule-card select { flex: 1; min-width: 120px; }
+.collapsible-header { cursor: pointer; user-select: none; min-height: var(--touch-min); display: flex; align-items: center; }
+.collapsible-content { margin-top: 0.5rem; }
+.form-section { margin-bottom: 1rem; }
+.form-section label { display: block; }
+.form-section label span { display: block; margin-bottom: 0.25rem; }
+.form-section input[type="text"] { width: 100%; max-width: 400px; }

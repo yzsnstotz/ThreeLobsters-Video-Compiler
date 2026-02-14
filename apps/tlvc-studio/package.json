@@ -1,0 +1,32 @@
+{
+  "name": "tlvc-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "build": "vite build",
+    "start": "node dist/server/index.js",
+    "prebuild": "tsc -p tsconfig.server.json"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "tlvc-extractor": "workspace:*",
+    "tlvc-preprocessor": "workspace:*",
+    "vite": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^22.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.0"
+  }
+}

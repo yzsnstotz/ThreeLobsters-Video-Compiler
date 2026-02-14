@@ -1,0 +1,41 @@
+{
+  "message": { "containerSelector": "div.message" },
+  "sender": {
+    "rules": [
+      {
+        "selector": "div.from_name",
+        "value": { "type": "text" },
+        "normalize": { "trim": true, "collapseWhitespace": true }
+      }
+    ]
+  },
+  "ts": {
+    "rules": [
+      {
+        "selector": "div.pull_right.date.details",
+        "value": { "type": "attr", "name": "title" },
+        "normalize": { "trim": true }
+      },
+      {
+        "selector": "div.pull_right.date.details",
+        "value": { "type": "text" },
+        "normalize": { "trim": true, "collapseWhitespace": true }
+      }
+    ]
+  },
+  "text": {
+    "rules": [
+      {
+        "selector": "div.text",
+        "value": { "type": "text", "preserveNewlines": true },
+        "normalize": { "trim": true }
+      }
+    ]
+  },
+  "meta": {
+    "id": "telegram_export_v1",
+    "name": "Telegram Desktop Export (default)",
+    "version": 1,
+    "updatedAt": "2026-02-14T00:00:00.000Z"
+  }
+}

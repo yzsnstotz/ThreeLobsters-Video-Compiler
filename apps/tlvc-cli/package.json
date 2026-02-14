@@ -1,0 +1,11 @@
+{
+  "name": "tlvc-cli",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "tlvc-preprocessor": "workspace:*"
+  }
+}
