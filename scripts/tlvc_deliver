@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# POST zip to TLVC API /v1/episodes/:ep/deliver. Fallback token path when TLVC_TOKEN_FILE unset.
+# Usage: tlvc_deliver --ep ep_0007 --zip /path/to/file.zip [--out <outDir>]
+# Env: TLVC_API_BASE (default http://127.0.0.1:8789), TLVC_TOKEN_FILE (default ~/.secrets/tlvc.token)
+
+set -e
+API_BASE="${TLVC_API_BASE:-http://127.0.0.1:8789}"
+_DEFAULT_TOKEN_DIR="${HOME:-$(eval echo ~"$(whoami)")}/.secrets"
+TOKEN_FILE="${TLVC_TOKEN_FILE:-$_DEFAULT_TOKEN_DIR/tlvc.token}"
+EP=""
+ZIP=""
+OUT=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ep) EP="$2"; shift 2 ;;
+    --zip) ZIP="$2"; shift 2 ;;
+    --out) OUT="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+if [[ -z "$EP" || -z "$ZIP" ]]; then
+  echo "Usage: tlvc_deliver --ep <epId> --zip <path> [--out <outDir>]" >&2
+  exit 1
+fi
+if [[ ! -f "$TOKEN_FILE" ]]; then
+  echo "token file missing: $TOKEN_FILE" >&2
+  exit 2
+fi
+TOK="$(cat "$TOKEN_FILE" | tr -d '\n' | sed 's/[[:space:]]*$//')"
+RESP="$(curl -sS -X POST -H "x-tlvc-token: $TOK" -F "file=@$ZIP" "$API_BASE/v1/episodes/$EP/deliver")"
+echo "$RESP"
+if echo "$RESP" | grep -q '"ok":true'; then
+  [[ -n "$OUT" ]] && echo "artifacts_dir: $OUT"
+  exit 0
+fi
+exit 3

@@ -18,6 +18,13 @@ export function runLintStep2(
   const warnings: LintEntry[] = [];
   const infos: LintEntry[] = [];
 
+  if (topk.segments.length === 0) {
+    errors.push({
+      code: 'NO_SEGMENTS',
+      message: 'segments array is empty; Step2 must produce at least one segment (check segmenter fallback)',
+    });
+  }
+
   if (residualExamples.length > 0) {
     errors.push({
       code: 'SENSITIVE_REMAIN',
@@ -27,6 +34,7 @@ export function runLintStep2(
   }
 
   const top1 = topk.segments[0];
+  const segmentMode = topk.meta.segment_mode;
   if (top1) {
     const len = top1.message_ids.length;
     if (len < 10 || len > 60) {
@@ -36,26 +44,27 @@ export function runLintStep2(
       });
     }
 
-    const msgMap = new Map(transcript.messages.map((m) => [m.id, m]));
-    let hasErrorTrigger = false;
-    const errorTriggerIds = getErrorTriggers().map((t) => t.id);
-    for (const mid of top1.message_ids) {
-      const m = msgMap.get(mid);
-      if (!m) continue;
-      for (const t of getErrorTriggers()) {
-        if (t.pattern.test(m.text)) {
-          hasErrorTrigger = true;
-          break;
+    if (segmentMode !== 'fallback') {
+      const msgMap = new Map(transcript.messages.map((m) => [m.id, m]));
+      let hasErrorTrigger = false;
+      for (const mid of top1.message_ids) {
+        const m = msgMap.get(mid);
+        if (!m) continue;
+        for (const t of getErrorTriggers()) {
+          if (t.pattern.test(m.text)) {
+            hasErrorTrigger = true;
+            break;
+          }
+          t.pattern.lastIndex = 0;
         }
-        t.pattern.lastIndex = 0;
+        if (hasErrorTrigger) break;
       }
-      if (hasErrorTrigger) break;
-    }
-    if (!hasErrorTrigger) {
-      errors.push({
-        code: 'TOP1_NO_ERROR_TRIGGER',
-        message: 'Top1 segment does not hit any error trigger',
-      });
+      if (!hasErrorTrigger) {
+        errors.push({
+          code: 'TOP1_NO_ERROR_TRIGGER',
+          message: 'Top1 segment does not hit any error trigger (segment_mode=error)',
+        });
+      }
     }
 
     const roles = top1.roles;
@@ -72,7 +81,7 @@ export function runLintStep2(
   if (tsRawMissing > 0) {
     warnings.push({
       code: 'TS_PARSE_MISSING',
-      message: `${tsRawMissing} message(s) have missing ts_raw`,
+      message: `${tsRawMissing} message(s) have missing or empty ts_raw (timestamp not extracted from HTML; check extractor profile or data-ts attribute)`,
     });
   }
 
@@ -91,10 +100,17 @@ export function runLintStep2(
 
   const ok = errors.length === 0;
   const exit_code = ok ? 0 : 2;
+  const summary: LintReportStep2['summary'] = {
+    errors: errors.length,
+    warnings: warnings.length,
+    infos: infos.length,
+  };
+  if (topk.meta.segment_mode != null) summary.segment_mode = topk.meta.segment_mode;
+  if (topk.meta.trigger_stats != null) summary.trigger_stats = topk.meta.trigger_stats;
   return {
     ok,
     exit_code,
-    summary: { errors: errors.length, warnings: warnings.length, infos: infos.length },
+    summary,
     errors,
     warnings,
     infos,

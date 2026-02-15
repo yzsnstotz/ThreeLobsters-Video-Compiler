@@ -62,6 +62,22 @@ pnpm tlvc preprocess ./telegram.html --ep ep_0007 --out build/episodes/ep_0007 -
 
 Step2 output is written to `<out_dir>/step2_preprocess/`.
 
+### Step2 doctor (config check + trigger stats)
+
+```bash
+pnpm tlvc doctor step2 --ep ep_0007 --in inbox/ep_0007
+```
+
+Prints: input path, messages.html, profile name/version, total messages, sample stats (first 20: ts missing, sender unknown, empty text), trigger hit counts (error/permission/action), and conclusion (将使用 error 切段 or 将使用 fallback 切段). Exit 0 unless input missing or parse error. Does not write build output.
+
+### Step2 one-click acceptance
+
+```bash
+./scripts/accept_step2.sh
+```
+
+Runs two fixtures (inbox/ep_0007 and a minimal error-trigger HTML), writes logs to `build/acceptance_logs/step2_accept_<timestamp>/`, prints PASS/FAIL and the log dir. See `docs/ACCEPTANCE.md` for details and troubleshooting (segments=[], TS missing, sender unknown).
+
 ## Step2 Watch (inbox daemon)
 
 A watch process monitors `inbox/` for new episode folders (`ep_####`). When it finds one that is fully delivered and stable, it runs Step2 CLI once and writes marker files under `build/episodes/<ep>/`. No LLM, no network, Node + fs only.

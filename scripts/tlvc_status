@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Call TLVC API GET /v1/episodes/:ep/status and print human-readable lines.
+# Usage: tlvc_status --ep ep_0007
+# Env: TLVC_API_BASE (default http://127.0.0.1:8789), TLVC_TOKEN_FILE (default ~/.secrets/tlvc.token)
+# Fallback: when TLVC_TOKEN_FILE unset, use homedir/.secrets/tlvc.token so exec without env works.
+
+set -e
+API_BASE="${TLVC_API_BASE:-http://127.0.0.1:8789}"
+_DEFAULT_TOKEN_DIR="${HOME:-$(eval echo ~"$(whoami)")}/.secrets"
+TOKEN_FILE="${TLVC_TOKEN_FILE:-$_DEFAULT_TOKEN_DIR/tlvc.token}"
+EP=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ep) EP="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+if [[ -z "$EP" ]]; then
+  echo "Usage: tlvc_status --ep <epId>" >&2
+  exit 1
+fi
+if [[ ! -f "$TOKEN_FILE" ]]; then
+  echo "token file missing: $TOKEN_FILE" >&2
+  exit 2
+fi
+TOK="$(cat "$TOKEN_FILE" | tr -d '\n' | sed 's/[[:space:]]*$//')"
+RESP="$(curl -sS -H "x-tlvc-token: $TOK" "$API_BASE/v1/episodes/$EP/status")"
+echo "$RESP" | node -e "
+const d = require('fs').readFileSync(0,'utf8');
+let j; try { j = JSON.parse(d); } catch(e) { process.stderr.write(d); process.exit(3); }
+if (!j.ok) { process.stderr.write(JSON.stringify(j)); process.exit(3); }
+const a = j.artifacts || {};
+console.log('step2:', j.status || 'unknown');
+console.log('artifacts: sanitized=' + !!a.sanitized + ' topk=' + !!a.topk + ' lint=' + !!a.lint);
+"

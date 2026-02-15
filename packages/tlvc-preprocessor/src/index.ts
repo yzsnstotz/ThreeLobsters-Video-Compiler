@@ -18,7 +18,8 @@ export type { ResolvedTelegramExportInput } from './input_resolver';
 export { resolveTelegramExportInput, EXPORT_HTML_CANDIDATES } from './input_resolver';
 import { parseAndAssignIds } from './html_parser';
 import { redactMessages } from './redactor';
-import { segment } from './segmenter';
+import { segmentWithFallback } from './segmenter';
+import { matchTriggers } from 'tlvc-rules';
 import { scoreSegments } from './scorer';
 import { runLint } from './lint_step2';
 
@@ -70,8 +71,18 @@ export async function preprocessEpisode(options: PreprocessOptions): Promise<Pre
       assets_dir: resolved.exportRootDir,
     },
   });
-  const rawSegments = segment(transcript.messages);
+  const { segments: rawSegments, usedFallback } = segmentWithFallback(transcript.messages);
   const topk = scoreSegments(rawSegments, transcript, k);
+  const trigger_stats = { error: 0, permission: 0, action: 0 };
+  for (const m of transcript.messages) {
+    for (const hit of matchTriggers(m.text)) {
+      if (hit.category === 'error') trigger_stats.error += 1;
+      else if (hit.category === 'permission') trigger_stats.permission += 1;
+      else if (hit.category === 'action') trigger_stats.action += 1;
+    }
+  }
+  topk.meta.segment_mode = usedFallback ? 'fallback' : 'error';
+  topk.meta.trigger_stats = trigger_stats;
   const lintReport = runLint(transcript, topk, residualExamples);
 
   const exitCode: 0 | 2 = lintReport.exit_code;
@@ -106,6 +117,9 @@ export async function preprocessEpisode(options: PreprocessOptions): Promise<Pre
 
   return { transcript, topk, lintReport, exitCode };
 }
+
+export { runDoctorStep2, printDoctorStep2 } from './doctor_step2';
+export type { DoctorStep2Options, DoctorStep2Result } from './doctor_step2';
 
 /** Default export for CJS/ESM interop (e.g. Studio server). */
 export default {

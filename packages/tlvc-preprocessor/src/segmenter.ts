@@ -1,5 +1,5 @@
 /**
- * Segment only on error triggers. Window pre=6, post=12 from rules.
+ * Segment on error triggers; if none, use deterministic fallback (fixed window WIN=40, OVERLAP=10).
  * Merge: overlap or gap<=1. Length 10-60: extend if <10, trim from both ends if >60 (prefer keeping near error hits).
  * segment_id s001, s002...
  */
@@ -8,9 +8,15 @@ import type { TranscriptMessage } from 'tlvc-schema';
 import {
   SEGMENT_WINDOW_PRE,
   SEGMENT_WINDOW_POST,
-  getErrorTriggers,
   matchErrorTriggers,
 } from 'tlvc-rules';
+
+/** Fallback window: fixed length and overlap (deterministic). */
+const FALLBACK_WIN = 40;
+const FALLBACK_OVERLAP = 10;
+const FALLBACK_STEP = FALLBACK_WIN - FALLBACK_OVERLAP; // 30
+const MIN_LEN = 10;
+const MAX_LEN = 60;
 
 export interface TriggerHit {
   trigger_id: string;
@@ -121,21 +127,21 @@ export function segment(messages: TranscriptMessage[]): RawSegment[] {
   }
 
   const merged = mergeRanges(windows);
-  const MIN_LEN = 10;
-  const MAX_LEN = 60;
   const segments: RawSegment[] = [];
+  const MIN_SEG = 10;
+  const MAX_SEG = 60;
 
   for (let i = 0; i < merged.length; i++) {
     let start = merged[i].start;
     let end = merged[i].end;
-    const expanded = expandToMin(start, end, MIN_LEN, total, messages);
+    const expanded = expandToMin(start, end, MIN_SEG, total, messages);
     start = expanded.start;
     end = expanded.end;
     const errorIndicesInRange = new Set<number>();
     for (let j = start; j <= end; j++) {
       if (matchErrorTriggers(messages[j].text).length > 0) errorIndicesInRange.add(j);
     }
-    const trimmed = trimToMax(start, end, MAX_LEN, messages, errorIndicesInRange);
+    const trimmed = trimToMax(start, end, MAX_SEG, messages, errorIndicesInRange);
     start = trimmed.start;
     end = trimmed.end;
 
@@ -163,4 +169,68 @@ export function segment(messages: TranscriptMessage[]): RawSegment[] {
   }
 
   return segments;
+}
+
+/**
+ * Deterministic fallback segmenter when no error triggers hit.
+ * Windows: [0..39], [30..69], [60..99]... Each segment forced to 10-60 messages.
+ */
+export function fallbackSegmenter(messages: TranscriptMessage[]): RawSegment[] {
+  const total = messages.length;
+  if (total === 0) return [];
+
+  const segments: RawSegment[] = [];
+  let start = 0;
+  let segIndex = 0;
+
+  while (start < total) {
+    let end = Math.min(start + FALLBACK_WIN - 1, total - 1);
+    let len = end - start + 1;
+
+    if (len < MIN_LEN) {
+      end = Math.min(start + MIN_LEN - 1, total - 1);
+      len = end - start + 1;
+    }
+    if (len > MAX_LEN) {
+      const trimStart = start + Math.floor((len - MAX_LEN) / 2);
+      start = trimStart;
+      end = start + MAX_LEN - 1;
+      len = MAX_LEN;
+    }
+
+    const message_ids = messages
+      .slice(start, end + 1)
+      .map((m) => m.id)
+      .filter(Boolean);
+    const start_ts = messages[start]?.ts ?? '';
+    const end_ts = messages[end]?.ts ?? '';
+    segIndex += 1;
+    const segment_id = 's' + String(segIndex).padStart(3, '0');
+    segments.push({
+      segment_id,
+      startIndex: start,
+      endIndex: end,
+      message_ids,
+      trigger_hits: [],
+      start_ts,
+      end_ts,
+    });
+
+    start += FALLBACK_STEP;
+  }
+
+  return segments;
+}
+
+export interface SegmentResult {
+  segments: RawSegment[];
+  usedFallback: boolean;
+}
+
+export function segmentWithFallback(messages: TranscriptMessage[]): SegmentResult {
+  const segmentsFromError = segment(messages);
+  if (segmentsFromError.length > 0) {
+    return { segments: segmentsFromError, usedFallback: false };
+  }
+  return { segments: fallbackSegmenter(messages), usedFallback: true };
 }

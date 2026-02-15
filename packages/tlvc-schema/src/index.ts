@@ -74,6 +74,12 @@ export interface TopKSegment {
   roles: SegmentRoles;
 }
 
+export interface TriggerStats {
+  error: number;
+  permission: number;
+  action: number;
+}
+
 export interface SegmentsTopKMeta {
   ep: string;
   k: number;
@@ -81,6 +87,10 @@ export interface SegmentsTopKMeta {
   input_kind: 'file' | 'dir';
   export_root: string;
   messages_html: string;
+  /** How segments were produced: error triggers vs fallback windows. */
+  segment_mode?: 'error' | 'fallback';
+  /** Trigger hit counts across all messages (for observability). */
+  trigger_stats?: TriggerStats;
 }
 
 export interface SegmentsTopK {
@@ -98,6 +108,8 @@ export interface LintReportSummary {
   errors: number;
   warnings: number;
   infos: number;
+  segment_mode?: 'error' | 'fallback';
+  trigger_stats?: TriggerStats;
 }
 
 export interface LintReportStep2 {
@@ -118,13 +130,13 @@ const REDACTION_KEYS = ['total_hits', 'by_rule'] as const;
 const MESSAGE_KEYS = ['id', 'ts', 'ts_raw', 'sender', 'text', 'reply_to', 'attachments'] as const;
 
 const SEGMENTS_ROOT_KEYS = ['meta', 'segments'] as const;
-const SEGMENTS_META_KEYS = ['ep', 'k', 'tz', 'input_kind', 'export_root', 'messages_html'] as const;
+const SEGMENTS_META_KEYS = ['ep', 'k', 'tz', 'input_kind', 'export_root', 'messages_html', 'segment_mode', 'trigger_stats'] as const;
 const SEGMENT_KEYS = ['segment_id', 'start_ts', 'end_ts', 'message_ids', 'score', 'reasons', 'roles'] as const;
 const REASON_KEYS = ['rule_id', 'points', 'detail'] as const;
 const ROLES_KEYS = ['ao000', 'ao001', 'ao002', 'leo', 'system', 'unknown'] as const;
 
 const LINT_ROOT_KEYS = ['ok', 'exit_code', 'summary', 'errors', 'warnings', 'infos'] as const;
-const LINT_SUMMARY_KEYS = ['errors', 'warnings', 'infos'] as const;
+const LINT_SUMMARY_KEYS = ['errors', 'warnings', 'infos', 'segment_mode', 'trigger_stats'] as const;
 const LINT_ENTRY_KEYS = ['code', 'message', 'examples'] as const;
 
 /** Predefined key orders for the three output roots (for stableStringify). */
@@ -138,9 +150,12 @@ export const KEY_ORDER_TRANSCRIPT: KeyOrderMap = {
   message: [...MESSAGE_KEYS],
 };
 
+const TRIGGER_STATS_KEYS = ['error', 'permission', 'action'] as const;
+
 export const KEY_ORDER_SEGMENTS: KeyOrderMap = {
   '': [...SEGMENTS_ROOT_KEYS],
   meta: [...SEGMENTS_META_KEYS],
+  trigger_stats: [...TRIGGER_STATS_KEYS],
   segments: ['segment_id', 'start_ts', 'end_ts', 'message_ids', 'score', 'reasons', 'roles'],
   segment: [...SEGMENT_KEYS],
   reasons: ['rule_id', 'points', 'detail'],
@@ -151,6 +166,7 @@ export const KEY_ORDER_SEGMENTS: KeyOrderMap = {
 export const KEY_ORDER_LINT: KeyOrderMap = {
   '': [...LINT_ROOT_KEYS],
   summary: [...LINT_SUMMARY_KEYS],
+  trigger_stats: [...TRIGGER_STATS_KEYS],
   errors: ['code', 'message', 'examples'],
   warnings: ['code', 'message', 'examples'],
   infos: ['code', 'message', 'examples'],
